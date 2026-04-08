@@ -1,0 +1,156 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #131313;
+  font-family: 'Inter', sans-serif;
+  color: #e5e2e1;
+  background: linear-gradient(135deg, #131313 0%, #1a1a1a 100%);
+}
+
+/* Selection */
+::selection {
+  background-color: #aec6ff;
+  color: #002e6b;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1c1b1b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #414754;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #5a6170;
+}
+
+/* Material Icons */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  user-select: none;
+}
+
+/* Custom Classes */
+.glass-header {
+  background: rgba(19, 19, 19, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.hero-gradient {
+  background: linear-gradient(135deg, #aec6ff 0%, #0070f3 100%);
+}
+
+.ghost-border {
+  outline: 1px solid rgba(65, 71, 84, 0.15);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-8 py-3 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all duration-300;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-2 bg-gray-700 text-gray-200 rounded-lg font-semibold hover:bg-gray-600 transition-all;
+  }
+
+  .input-base {
+    @apply w-full px-4 py-3 border border-gray-600 bg-gray-900 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all;
+  }
+
+  .card {
+    @apply bg-[#201f1f] rounded-xl p-6 ghost-border;
+  }
+
+  .section-title {
+    @apply text-4xl md:text-5xl font-extrabold tracking-tighter text-white;
+  }
+
+  .section-subtitle {
+    @apply text-on-surface-variant text-lg md:text-xl leading-relaxed;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent;
+  }
+
+  .smooth-transition {
+    @apply transition-all duration-300 ease-out;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.6s ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.6s ease-out;
+}
