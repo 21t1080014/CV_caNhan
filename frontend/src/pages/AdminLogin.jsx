@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
+import { getStoredToken, saveAuthSession } from '../utils/auth';
 
 export default function AdminLogin() {
     const [username, setUsername] = useState('');
@@ -9,6 +10,12 @@ export default function AdminLogin() {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
+    useEffect(() => {
+        if (getStoredToken()) {
+            navigate('/admin/dashboard', { replace: true });
+        }
+    }, [navigate]);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -16,8 +23,8 @@ export default function AdminLogin() {
 
         try {
             const { data } = await api.post('/auth/login', { username, password });
-            localStorage.setItem('token', data.token);
-            navigate('/admin/dashboard');
+            saveAuthSession(data.token);
+            navigate('/admin/dashboard', { replace: true });
         } catch (err) {
             setError(err.response?.data?.message || '❌ Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.');
         } finally {

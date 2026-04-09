@@ -38,11 +38,11 @@ public class WebSecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints (Viewers)
-                        .requestMatchers("/api/public/**").permitAll()
-                        .requestMatchers("/api/auth/login").permitAll()
+                        .requestMatchers("/public/**").permitAll()
+                        .requestMatchers("/auth/login").permitAll()
 
                         // Admin endpoints (cần JWT)
-                        .requestMatchers("/api/admin/**").authenticated()
+                        .requestMatchers("/admin/**").authenticated()
 
                         .anyRequest().permitAll()
                 )

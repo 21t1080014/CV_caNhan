@@ -5,24 +5,12 @@ import SkillsManager from '../components/SkillsManager';
 import ExperienceManager from '../components/ExperienceManager';
 import EducationManager from '../components/EducationManager';
 import ProjectsManager from '../components/ProjectsManager';
+import { clearAuthSession } from '../utils/auth';
+import { createEmptyCV, normalizeCVData } from '../utils/cv';
 
 export default function AdminDashboard() {
     const navigate = useNavigate();
-    const [cv, setCv] = useState({
-        fullName: '',
-        email: '',
-        summary: '',
-        about: '',
-        skills: [],
-        experiences: [],
-        education: [],
-        projects: [],
-        phoneNumber: '',
-        location: '',
-        profileImage: '',
-        socialLinks: { linkedin: '', github: '', portfolio: '', twitter: '' },
-        isPublished: false
-    });
+    const [cv, setCv] = useState(createEmptyCV);
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -36,7 +24,7 @@ export default function AdminDashboard() {
     const fetchCV = async () => {
         try {
             const { data } = await api.get('/admin/cv');
-            setCv(data);
+            setCv(normalizeCVData(data));
         } catch (err) {
             if (err.response?.status === 401) {
                 navigate('/admin/login');
@@ -51,7 +39,7 @@ export default function AdminDashboard() {
     const handleSave = async () => {
         setSaving(true);
         try {
-            await api.put('/admin/cv', cv);
+            await api.put('/admin/cv', normalizeCVData(cv));
             setMessage('✅ CV đã được lưu thành công!');
             setTimeout(() => setMessage(''), 3000);
         } catch (err) {
@@ -73,7 +61,7 @@ export default function AdminDashboard() {
     };
 
     const handleLogout = () => {
-        localStorage.removeItem('token');
+        clearAuthSession();
         navigate('/admin/login');
     };
 
@@ -213,7 +201,50 @@ export default function AdminDashboard() {
     );
 }
 
+const MAX_PROFILE_IMAGE_SIZE = 3 * 1024 * 1024;
+
+function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('Không thể đọc file ảnh'));
+        reader.readAsDataURL(file);
+    });
+}
+
 function BasicTab({ cv, setCv }) {
+    const [imageError, setImageError] = useState('');
+
+    const handleProfileImageChange = async (event) => {
+        const file = event.target.files?.[0];
+        if (!file) {
+            return;
+        }
+
+        if (!file.type.startsWith('image/')) {
+            setImageError('❌ Vui lòng chọn file ảnh hợp lệ.');
+            event.target.value = '';
+            return;
+        }
+
+        if (file.size > MAX_PROFILE_IMAGE_SIZE) {
+            setImageError('❌ Ảnh đại diện phải nhỏ hơn 3MB.');
+            event.target.value = '';
+            return;
+        }
+
+        try {
+            const dataUrl = await readFileAsDataUrl(file);
+            setCv({ ...cv, profileImage: dataUrl });
+            setImageError('');
+        } catch (error) {
+            setImageError(error.message);
+        } finally {
+            event.target.value = '';
+        }
+    };
+
     return (
         <div className="space-y-6">
             <h2 className="text-2xl font-bold text-gray-800">📋 Thông tin cơ bản</h2>
@@ -241,16 +272,37 @@ function BasicTab({ cv, setCv }) {
             </div>
 
             <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Ảnh đại diện (URL)</label>
-                <input
-                    type="url"
-                    value={cv.profileImage}
-                    onChange={(e) => setCv({...cv, profileImage: e.target.value})}
-                    placeholder="https://example.com/avatar.jpg"
-                    className="input-base"
-                />
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Ảnh đại diện</label>
+                <label className="inline-flex cursor-pointer items-center gap-3 rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white transition hover:bg-indigo-700">
+                    <span className="material-symbols-outlined">upload</span>
+                    Tải ảnh lên
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleProfileImageChange}
+                        className="hidden"
+                    />
+                </label>
+                <p className="mt-2 text-sm text-gray-500">
+                    Chọn ảnh JPG, PNG hoặc WebP. Kích thước tối đa 3MB.
+                </p>
+                {imageError && (
+                    <p className="mt-2 text-sm font-semibold text-red-600">{imageError}</p>
+                )}
                 {cv.profileImage && (
-                    <img src={cv.profileImage} alt="Preview" className="w-32 h-32 rounded-lg mt-4 object-cover shadow-md" />
+                    <div className="mt-4 flex items-center gap-4">
+                        <img src={cv.profileImage} alt="Preview" className="h-32 w-32 rounded-lg object-cover shadow-md" />
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setCv({ ...cv, profileImage: '' });
+                                setImageError('');
+                            }}
+                            className="rounded-lg border border-red-200 px-4 py-2 font-semibold text-red-600 transition hover:bg-red-50"
+                        >
+                            Xóa ảnh
+                        </button>
+                    </div>
                 )}
             </div>
 

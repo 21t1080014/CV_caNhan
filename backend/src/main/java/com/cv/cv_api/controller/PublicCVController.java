@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/public")
+@RequestMapping("/public")
 @RequiredArgsConstructor
 public class PublicCVController {
     private final CVDataService cvService;

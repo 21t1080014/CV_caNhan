@@ -1,5 +1,51 @@
 import { useEffect, useState } from 'react';
 import api from '../utils/api';
+import { normalizeCVData } from '../utils/cv';
+
+function buildGmailComposeUrl(email) {
+    if (!email) {
+        return '#contact';
+    }
+
+    return `https://mail.google.com/mail/u/0/?fs=1&to=${encodeURIComponent(email)}&tf=cm`;
+}
+
+function buildNavigationSections(cv) {
+    const sections = [
+        { id: 'intro', label: 'Intro', icon: 'person' },
+    ];
+
+    if (cv?.experiences?.length) {
+        sections.push({ id: 'experience', label: 'Experience', icon: 'work' });
+    }
+
+    if (cv?.projects?.length) {
+        sections.push({ id: 'projects', label: 'Projects', icon: 'folder' });
+    }
+
+    if (cv?.skills?.length) {
+        sections.push({ id: 'skills', label: 'Skills', icon: 'code' });
+    }
+
+    if (cv?.education?.length) {
+        sections.push({ id: 'education', label: 'Education', icon: 'school' });
+    }
+
+    sections.push({ id: 'contact', label: 'Contact', icon: 'mail' });
+
+    return sections;
+}
+
+function createCvFileName(fullName) {
+    const normalizedName = (fullName || 'cv')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .toLowerCase();
+
+    return `${normalizedName || 'cv'}-resume`;
+}
 
 export default function PublicPortfolio() {
     const [cv, setCv] = useState(null);
@@ -11,7 +57,7 @@ export default function PublicPortfolio() {
         const fetchCV = async () => {
             try {
                 const { data } = await api.get('/public/cv');
-                setCv(data);
+                setCv(normalizeCVData(data));
             } catch (err) {
                 setError('CV chưa được công bố hoặc đã xảy ra lỗi');
                 console.error('Error fetching CV:', err);
@@ -22,6 +68,39 @@ export default function PublicPortfolio() {
 
         fetchCV();
     }, []);
+
+    useEffect(() => {
+        if (!cv) {
+            return undefined;
+        }
+
+        const sections = buildNavigationSections(cv);
+
+        const updateActiveSection = () => {
+            const scrollPosition = window.scrollY + 140;
+            let currentSection = sections[0]?.id ?? 'intro';
+
+            sections.forEach((section) => {
+                const element = document.getElementById(section.id);
+                if (element && element.offsetTop <= scrollPosition) {
+                    currentSection = section.id;
+                }
+            });
+
+            setActiveSection((previousSection) => (
+                previousSection === currentSection ? previousSection : currentSection
+            ));
+        };
+
+        updateActiveSection();
+        window.addEventListener('scroll', updateActiveSection, { passive: true });
+        window.addEventListener('resize', updateActiveSection);
+
+        return () => {
+            window.removeEventListener('scroll', updateActiveSection);
+            window.removeEventListener('resize', updateActiveSection);
+        };
+    }, [cv]);
 
     if (loading) {
         return (
@@ -45,23 +124,86 @@ export default function PublicPortfolio() {
         );
     }
 
+    const navigationSections = buildNavigationSections(cv);
+    const gmailComposeUrl = buildGmailComposeUrl(cv.email);
+    const fileName = createCvFileName(cv.fullName);
+    const footerContacts = [
+        cv.email ? {
+            label: 'Email',
+            value: cv.email,
+            href: gmailComposeUrl,
+            external: true,
+        } : null,
+        cv.phoneNumber ? {
+            label: 'Điện thoại',
+            value: cv.phoneNumber,
+            href: `tel:${cv.phoneNumber}`,
+            external: false,
+        } : null,
+        cv.location ? {
+            label: 'Địa chỉ',
+            value: cv.location,
+            href: null,
+            external: false,
+        } : null,
+        cv.socialLinks?.linkedin ? {
+            label: 'LinkedIn',
+            value: cv.socialLinks.linkedin,
+            href: cv.socialLinks.linkedin,
+            external: true,
+        } : null,
+        cv.socialLinks?.github ? {
+            label: 'GitHub',
+            value: cv.socialLinks.github,
+            href: cv.socialLinks.github,
+            external: true,
+        } : null,
+        cv.socialLinks?.portfolio ? {
+            label: 'Portfolio',
+            value: cv.socialLinks.portfolio,
+            href: cv.socialLinks.portfolio,
+            external: true,
+        } : null,
+        cv.socialLinks?.twitter ? {
+            label: 'Twitter',
+            value: cv.socialLinks.twitter,
+            href: cv.socialLinks.twitter,
+            external: true,
+        } : null,
+    ].filter(Boolean);
+
+    const handleDownloadCV = () => {
+        const previousTitle = document.title;
+        const nextTitle = fileName;
+
+        const restoreTitle = () => {
+            document.title = previousTitle;
+            window.removeEventListener('afterprint', restoreTitle);
+        };
+
+        document.title = nextTitle;
+        window.addEventListener('afterprint', restoreTitle);
+        window.scrollTo(0, 0);
+
+        window.setTimeout(() => {
+            window.print();
+            window.setTimeout(restoreTitle, 1000);
+        }, 150);
+    };
+
     return (
-        <div className="bg-background text-on-background min-h-screen">
+        <div className="bg-background text-on-background min-h-screen print-root">
             {/* TopNavBar */}
-            <nav className="bg-[#131313]/70 backdrop-blur-xl fixed top-0 w-full z-50 shadow-[0_20px_40px_rgba(0,0,0,0.4)]">
+            <nav className="bg-[#131313]/70 backdrop-blur-xl fixed top-0 w-full z-50 shadow-[0_20px_40px_rgba(0,0,0,0.4)] no-print">
                 <div className="flex justify-between items-center px-8 h-16 max-w-7xl mx-auto w-full">
                     <div className="text-lg font-bold tracking-tighter text-white">
                         {cv.fullName || 'Portfolio'}
                     </div>
 
                     <div className="hidden md:flex items-center gap-8">
-                        {[
-                            { id: 'intro', label: 'Intro', icon: 'person' },
-                            { id: 'experience', label: 'Experience', icon: 'work' },
-                            { id: 'projects', label: 'Projects', icon: 'folder' },
-                            { id: 'skills', label: 'Skills', icon: 'code' },
-                            { id: 'education', label: 'Education', icon: 'school' },
-                        ].map(item => (
+                        {navigationSections
+                            .filter((item) => item.id !== 'contact')
+                            .map(item => (
                             <a
                                 key={item.id}
                                 href={`#${item.id}`}
@@ -78,8 +220,13 @@ export default function PublicPortfolio() {
                     </div>
 
                     <a
-                        href={`mailto:${cv.email}`}
-                        className="bg-primary-container text-on-primary-container px-6 py-2 rounded-full font-medium text-sm hover:scale-95 duration-200 ease-in-out transition-all"
+                        href="#contact"
+                        onClick={() => setActiveSection('contact')}
+                        className={`px-6 py-2 rounded-full font-medium text-sm duration-200 ease-in-out transition-all ${
+                            activeSection === 'contact'
+                                ? 'bg-primary text-on-primary shadow-glow'
+                                : 'bg-primary-container text-on-primary-container hover:scale-95'
+                        }`}
                     >
                         Contact
                     </a>
@@ -91,7 +238,7 @@ export default function PublicPortfolio() {
                 <div className="flex flex-col lg:flex-row items-center gap-16">
                     {/* Avatar Side */}
                     <div className="w-full lg:w-1/2 flex justify-start">
-                        <div className="relative group">
+                        <div className="relative group print-break-avoid">
                             <div className="absolute -inset-4 hero-gradient opacity-20 blur-3xl group-hover:opacity-30 transition duration-1000"></div>
                             {cv.profileImage && (
                                 <img
@@ -116,8 +263,12 @@ export default function PublicPortfolio() {
                         </div>
 
                         {/* CTA Buttons */}
-                        <div className="flex flex-wrap items-center gap-6">
-                            <button className="hero-gradient text-on-primary-container px-8 py-4 rounded-xl font-bold flex items-center gap-3 hover:shadow-glow-lg transition-all">
+                        <div className="flex flex-wrap items-center gap-6 no-print">
+                            <button
+                                type="button"
+                                onClick={handleDownloadCV}
+                                className="hero-gradient text-on-primary-container px-8 py-4 rounded-xl font-bold flex items-center gap-3 hover:shadow-glow-lg transition-all"
+                            >
                                 <span>Download CV</span>
                                 <span className="material-symbols-outlined">download</span>
                             </button>
@@ -146,8 +297,11 @@ export default function PublicPortfolio() {
                                 )}
                                 {cv.email && (
                                     <a
-                                        href={`mailto:${cv.email}`}
+                                        href={gmailComposeUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
                                         className="p-3 bg-surface-container-high rounded-full hover:bg-primary hover:text-on-primary transition-all duration-300"
+                                        aria-label={`Gửi email cho ${cv.email} bằng Gmail`}
                                     >
                                         <span className="material-symbols-outlined">mail</span>
                                     </a>
@@ -183,7 +337,7 @@ export default function PublicPortfolio() {
                                         <div className="absolute left-0 md:left-1/2 transform -translate-x-1/2 w-4 h-4 bg-primary rounded-full border-4 border-surface shadow-[0_0_15px_rgba(174,198,255,0.6)]"></div>
 
                                         <div className="pl-12 md:pl-0 md:w-[45%]">
-                                            <div className="card">
+                                            <div className="card print-break-avoid">
                                                 <h4 className="text-white font-bold text-xl mb-1">{exp.position}</h4>
                                                 <p className="text-primary text-sm mb-4">{exp.company}</p>
                                                 <span className="md:hidden text-primary font-bold text-xs tracking-widest uppercase mb-4 block">
@@ -212,7 +366,7 @@ export default function PublicPortfolio() {
                         {cv.projects.map((proj, i) => (
                             <div
                                 key={i}
-                                className="group relative bg-surface-container-high rounded-xl overflow-hidden ghost-border hover:scale-[1.02] transition-all duration-500"
+                                className="group relative bg-surface-container-high rounded-xl overflow-hidden ghost-border hover:scale-[1.02] transition-all duration-500 print-break-avoid"
                             >
                                 <div className="aspect-video overflow-hidden bg-gradient-to-br from-blue-900 to-blue-950 flex items-center justify-center">
                                     <span className="material-symbols-outlined text-6xl text-primary/30">folder</span>
@@ -299,7 +453,7 @@ export default function PublicPortfolio() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
                         {cv.education.map((edu, i) => (
-                            <div key={i} className="card group hover:bg-surface-container-high transition-colors">
+                            <div key={i} className="card group hover:bg-surface-container-high transition-colors print-break-avoid">
                                 <div className="flex justify-between items-start mb-2">
                                     <h4 className="text-white font-bold text-lg">{edu.degree}</h4>
                                     <span className="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">school</span>
@@ -318,7 +472,7 @@ export default function PublicPortfolio() {
             )}
 
             {/* Contact Section */}
-            <section className="py-24 bg-surface-container-low">
+            <section className="py-24 bg-surface-container-low" id="contact">
                 <div className="max-w-7xl mx-auto px-8 text-center">
                     <h2 className="section-title mb-6">Let's Connect</h2>
                     <p className="text-on-surface-variant text-lg mb-8 max-w-2xl mx-auto">
@@ -327,11 +481,13 @@ export default function PublicPortfolio() {
 
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <a
-                            href={`mailto:${cv.email}`}
+                            href={gmailComposeUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="btn-primary flex items-center justify-center gap-2"
                         >
                             <span className="material-symbols-outlined">mail</span>
-                            Send Email
+                            Mở Gmail
                         </a>
 
                         {cv.socialLinks?.linkedin && (
@@ -363,55 +519,43 @@ export default function PublicPortfolio() {
 
             {/* Footer */}
             <footer className="bg-[#1c1b1b] border-t border-outline-variant/20">
-                <div className="flex flex-col md:flex-row justify-between items-center gap-6 max-w-7xl mx-auto w-full py-12 px-8">
-                    <div className="space-y-2">
+                <div className="max-w-7xl mx-auto w-full py-12 px-8">
+                    <div className="flex flex-col lg:flex-row justify-between gap-10">
+                        <div className="space-y-2 lg:max-w-sm">
                         <div className="text-sm font-semibold text-white">
                             {cv.fullName}
                         </div>
                         <p className="font-['Inter'] text-xs uppercase tracking-widest text-zinc-500">
                             © 2026 Professional Portfolio. Built with Craft.
                         </p>
-                    </div>
+                        </div>
 
-                    <div className="flex items-center gap-8">
-                        {cv.socialLinks?.github && (
-                            <a
-                                href={cv.socialLinks.github}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="font-['Inter'] text-xs uppercase tracking-widest text-zinc-500 hover:text-blue-400 transition-colors opacity-80 hover:opacity-100"
-                            >
-                                GitHub
-                            </a>
-                        )}
-                        {cv.socialLinks?.linkedin && (
-                            <a
-                                href={cv.socialLinks.linkedin}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="font-['Inter'] text-xs uppercase tracking-widest text-zinc-500 hover:text-blue-400 transition-colors opacity-80 hover:opacity-100"
-                            >
-                                LinkedIn
-                            </a>
-                        )}
-                        {cv.socialLinks?.twitter && (
-                            <a
-                                href={cv.socialLinks.twitter}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="font-['Inter'] text-xs uppercase tracking-widest text-zinc-500 hover:text-blue-400 transition-colors opacity-80 hover:opacity-100"
-                            >
-                                Twitter
-                            </a>
-                        )}
-                        {cv.email && (
-                            <a
-                                href={`mailto:${cv.email}`}
-                                className="font-['Inter'] text-xs uppercase tracking-widest text-zinc-500 hover:text-blue-400 transition-colors opacity-80 hover:opacity-100"
-                            >
-                                Email
-                            </a>
-                        )}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 flex-1">
+                            {footerContacts.map((contact) => (
+                                <div
+                                    key={`${contact.label}-${contact.value}`}
+                                    className="rounded-xl border border-outline-variant/20 bg-surface-container-low p-4"
+                                >
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-zinc-500">
+                                        {contact.label}
+                                    </p>
+                                    {contact.href ? (
+                                        <a
+                                            href={contact.href}
+                                            target={contact.external ? '_blank' : undefined}
+                                            rel={contact.external ? 'noopener noreferrer' : undefined}
+                                            className="mt-2 block break-all text-sm text-white hover:text-primary transition-colors"
+                                        >
+                                            {contact.value}
+                                        </a>
+                                    ) : (
+                                        <p className="mt-2 text-sm text-white">
+                                            {contact.value}
+                                        </p>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </footer>

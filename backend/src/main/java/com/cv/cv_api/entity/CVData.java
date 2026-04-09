@@ -43,7 +43,8 @@ public class CVData {
 
     private String location;
 
-    private String profileImage; // URL to image
+    @Column(columnDefinition = "LONGTEXT")
+    private String profileImage; // URL hoặc dữ liệu ảnh đã tải lên
 
     @Column(columnDefinition = "JSON")
     private String socialLinks; // {linkedin, github, portfolio}

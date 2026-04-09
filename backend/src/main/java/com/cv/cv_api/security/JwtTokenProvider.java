@@ -11,6 +11,7 @@ import java.util.Date;
 
 @Component
 public class JwtTokenProvider {
+    private static final long MINIMUM_EXPIRATION_IN_MS = 72L * 60L * 60L * 1000L;
 
     @Value("${jwt.secret}")
     private String jwtSecret;
@@ -22,7 +23,7 @@ public class JwtTokenProvider {
         return Jwts.builder()
                 .subject(username)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + jwtExpirationInMs))
+                .expiration(new Date(System.currentTimeMillis() + Math.max(jwtExpirationInMs, MINIMUM_EXPIRATION_IN_MS)))
                 .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8)), SignatureAlgorithm.HS512)
                 .compact();
     }

@@ -154,3 +154,93 @@ body {
 .animate-slide-in-right {
   animation: slideInRight 0.6s ease-out;
 }
+
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #111827 !important;
+  }
+
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-root,
+  .bg-background,
+  .bg-surface-container-low,
+  .bg-surface-container-high,
+  .bg-surface-container,
+  .bg-surface-container-lowest,
+  .bg-\[\#1c1b1b\] {
+    background: #ffffff !important;
+    color: #111827 !important;
+  }
+
+  .card,
+  .ghost-border {
+    background: #ffffff !important;
+    color: #111827 !important;
+    box-shadow: none !important;
+    outline: none !important;
+    border: 1px solid #d1d5db !important;
+  }
+
+  .section-title,
+  .text-white,
+  .text-on-background,
+  .text-on-surface,
+  .text-on-surface-variant,
+  .text-primary {
+    color: #111827 !important;
+  }
+
+  .hero-gradient,
+  .btn-primary,
+  .btn-secondary,
+  .bg-primary-container,
+  .bg-secondary-container,
+  .bg-surface-container-highest {
+    background: #ffffff !important;
+    color: #111827 !important;
+    border: 1px solid #d1d5db !important;
+    box-shadow: none !important;
+  }
+
+  .shadow-2xl,
+  .shadow-glow,
+  .shadow-glow-lg {
+    box-shadow: none !important;
+  }
+
+  .border-outline-variant\/20,
+  .border-primary\/20 {
+    border-color: #d1d5db !important;
+  }
+
+  .print-break-avoid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  a {
+    color: inherit !important;
+    text-decoration: none !important;
+  }
+
+  section,
+  footer {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
