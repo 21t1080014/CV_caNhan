@@ -4,6 +4,10 @@
   "installCommand": "npm install",
   "framework": "vite",
   "outputDirectory": "dist",
+  "env": {
+    "VITE_API_URL": "@vite_api_url",
+    "VITE_PUBLIC_URL": "@vite_public_url"
+  },
   "rewrites": [
     {
       "source": "/(.*)",
